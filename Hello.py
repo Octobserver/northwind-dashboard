@@ -107,8 +107,43 @@ def run():
 
     with tab3:
       st.header("Suppliers")
-      st.image("https://static.streamlit.io/examples/owl.jpg", width=200)
 
+      #Supplier Performance: Metrics on delivery time, completeness, and correctness from different suppliers
+      st.write("### Supplier Performance")
+
+      #Supplier Geographic Distribution: A map showing where suppliers are located
+      st.write("### Supplier Geographic Distribution")
+      supplier_distribution = conn.query("SELECT Country, COUNT(*) AS NumSuppliers FROM Suppliers GROUP BY Country")
+      st.bar_chart(supplier_distribution, x="Country", y="NumSuppliers")
+      country_codes = cc.pandas_convert(series=supplier_distribution.Country, to='ISO3')  
+      z = supplier_distribution.NumSuppliers
+
+      layout = dict(geo={'scope': "world"})
+      data = dict(
+          type='choropleth',
+          locations=country_codes,
+          locationmode='ISO-3',
+          colorscale='Viridis',
+          z=z)
+      map = go.Figure(data=[data], layout=layout)
+      map.update_geos(projection_type="orthographic")
+      map.update_layout(height=300, margin={"r":0,"t":0,"l":0,"b":0})
+      st.plotly_chart(map)
+
+      #Products by Supplier: A bar chart showing the number of products supplied by each supplier
+      st.write("Products by Supplier")
+      products_by_supplier = conn.query("SELECT CompanyName, COUNT(*) AS NumProducts FROM Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
+      st.bar_chart(products_by_supplier, x="CompanyName", y="NumProducts")
+
+      #Inventory Levels by Supplier: A bar chart showing current inventory levels of different products by supplier
+      st.write("Inventory Levels by Supplier")
+      inventory_levels = conn.query("SELECT CompanyName, SUM(UnitsInStock) AS Inventory FROM Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
+      st.bar_chart(inventory_levels, x="CompanyName", y="Inventory")
+
+      #Orders by Supplier: A bar chart showing the number of orders by supplier
+      st.write("Orders by Supplier")
+      orders_by_suppliers = conn.query("SELECT CompanyName, COUNT(DISTINCT(OrderID)) AS NumOrders FROM [Order Details] INNER JOIN Products ON [Order Details].ProductID = Products.ProductID INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
+      st.bar_chart(orders_by_suppliers, x="CompanyName", y="NumOrders")
 
 
 if __name__ == "__main__":
