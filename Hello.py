@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import streamlit as st
+from sklearn.preprocessing import OneHotEncoder
+import pandas
 import plotly.offline as py
 import plotly.graph_objs as go
 import country_converter as coco
@@ -71,6 +73,9 @@ def run():
       # Customer Segmentation: A pie chart showing segmentation of customers based on their purchase behavior
       # TODO: use UMAP for dimensional reduction and HDBSCAN for clustering
       st.write("### Customer Segmentation")
+      customer_data = conn.query('SELECT Orders.OrderID, Orders.OrderDate, Orders.ShippedDate, Customers.Country AS CustomerCountry, Customers.City AS CustomerCity, Customers.Region AS CustomerRegion, Products.ProductID, Products.ProductName, Products.CategoryID, [Order Details].UnitPrice, [Order Details].Quantity, [Order Details].Discount, Categories.CategoryName, Suppliers.Country AS SupplierCountry, Suppliers.Region AS SupplierRegion, ([Order Details].UnitPrice * [Order Details].Quantity) - ([Order Details].UnitPrice * [Order Details].Quantity * [Order Details].Discount) AS TotalPrice FROM Orders INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID INNER JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID INNER JOIN Products ON [Order Details].ProductID = Products.ProductID INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID WHERE Orders.OrderDate BETWEEN \'2010-01-01\' AND \'2020-12-31\' ORDER BY Orders.OrderDate;')
+      df = pandas.DataFrame(customer_data)
+      print(df["OrderID"])
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")
