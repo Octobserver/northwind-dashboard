@@ -1,5 +1,8 @@
 altair
 numpy
 pandas
+plotly
 pydeck
+country_converter
+scikit-learn
 streamlit
