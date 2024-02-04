@@ -14,7 +14,7 @@
 
 import streamlit as st
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+#from sklearn.preprocessing import OneHotEncoder
 import pandas
 import plotly.offline as py
 import plotly.graph_objs as go
@@ -82,10 +82,10 @@ def run():
       # columns: OrderID, OrderDate, ShippedDate, CustomerCountry, CustomerCity, CustomerRegion, ProductID, ProductName, CategoryID, UnitPrice, Quantity, Discount, CategoryName, SupplierCountry,SupplierRegion,TotalPrice
       cols_to_transform = ['OrderDate', 'ShippedDate', 'CustomerCountry', 'CustomerCity', 'CustomerRegion', 'ProductName', 'CategoryName', 'SupplierCountry', 'SupplierRegion']
       cols_to_retain = ['OrderID', 'TotalPrice', 'UnitPrice', 'Quantity', 'ProductID', 'CategoryID', 'Discount']
-      enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(df.shape[0]*0.05), handle_unknown='infrequent_if_exist', dtype = int)
-      transformed = enc.fit_transform(df[cols_to_transform])
-      processed = np.concatenate([df[cols_to_retain], transformed], axis=1)
-      print(processed)
+      #enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(df.shape[0]*0.05), handle_unknown='infrequent_if_exist', dtype = int)
+      #transformed = enc.fit_transform(df[cols_to_transform])
+      #processed = np.concatenate([df[cols_to_retain], transformed], axis=1)
+      #print(processed)
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")
