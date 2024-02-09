@@ -13,19 +13,18 @@
 # limitations under the License.
 
 import streamlit as st
-import numpy as np
-#from sklearn.preprocessing import OneHotEncoder
 import pandas
-import plotly.offline as py
+import plotly.express as px
 import plotly.graph_objs as go
 import country_converter as coco
 from streamlit.logger import get_logger
+from utils import run_umap
 
 LOGGER = get_logger(__name__)
 conn = st.connection('northwind_db', type='sql')
 cc = coco.CountryConverter()
 
-def run():
+def build_dash_board() -> None:
     tab1, tab2, tab3 = st.tabs(["Sales", "Customers", "Suppliers"])
     with tab1:
       st.header("Sales")
@@ -78,14 +77,16 @@ def run():
       st.dataframe(customer_data)
 
       # transform categorical data
-      df = pandas.DataFrame(customer_data)
+      df = pandas.DataFrame(customer_data).dropna()
       # columns: OrderID, OrderDate, ShippedDate, CustomerCountry, CustomerCity, CustomerRegion, ProductID, ProductName, CategoryID, UnitPrice, Quantity, Discount, CategoryName, SupplierCountry,SupplierRegion,TotalPrice
       cols_to_transform = ['OrderDate', 'ShippedDate', 'CustomerCountry', 'CustomerCity', 'CustomerRegion', 'ProductName', 'CategoryName', 'SupplierCountry', 'SupplierRegion']
       cols_to_retain = ['OrderID', 'TotalPrice', 'UnitPrice', 'Quantity', 'ProductID', 'CategoryID', 'Discount']
-      #enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(df.shape[0]*0.05), handle_unknown='infrequent_if_exist', dtype = int)
-      #transformed = enc.fit_transform(df[cols_to_transform])
-      #processed = np.concatenate([df[cols_to_retain], transformed], axis=1)
-      #print(processed)
+     
+      embedding = run_umap(df, cols_to_transform, cols_to_retain)
+      
+      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, color='CustomerRegion')
+      st.plotly_chart(fig)
+      
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")
@@ -99,6 +100,7 @@ def run():
       st.write("### Customer Geographic Distribution")
       geographic_distribution = conn.query('SELECT Country, COUNT(*) AS NumCustomers FROM Customers GROUP BY Country')
       st.bar_chart(geographic_distribution, x = "Country", y = "NumCustomers")
+
       country_codes = cc.pandas_convert(series=geographic_distribution.Country, to='ISO3')  
       z = geographic_distribution.NumCustomers
 
@@ -161,5 +163,13 @@ def run():
       st.bar_chart(orders_by_suppliers, x="CompanyName", y="NumOrders")
 
 
+
+
 if __name__ == "__main__":
-    run()
+    #st.set_page_config(page_title="Dashboard Demo - Northwind Database", page_icon="📹")
+    st.markdown("# Dashboard Demo - Northwind Database")
+    st.sidebar.header("Dashboard Demo")
+    st.write(
+        """The dashboard looks at Northwind database and displays the data in a variety of plots. The dashboard can be filtered by your selections on the left. Potential users for this dashboard are businesses trying to analyze their sales for improvements and new investment areas."""
+    )
+    build_dash_board()

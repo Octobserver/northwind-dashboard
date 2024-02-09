@@ -3,6 +3,6 @@ numpy
 pandas
 plotly
 pydeck
-country_converter
+country-converter
 scikit-learn
 streamlit
