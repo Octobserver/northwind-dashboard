@@ -15,7 +15,7 @@
 import inspect
 import textwrap
 import numpy as np
-import umap
+import umap.umap_ as umap
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 import streamlit as st
