@@ -7,5 +7,4 @@ country-converter
 scikit-learn
 sqlalchemy
 streamlit
-umap
 umap-learn
