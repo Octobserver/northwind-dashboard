@@ -6,3 +6,4 @@ pydeck
 country-converter
 scikit-learn
 streamlit
+umap
