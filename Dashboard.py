@@ -14,9 +14,11 @@
 
 import streamlit as st
 import pandas
+import hdbscan
 import plotly.express as px
 import plotly.graph_objs as go
 import country_converter as coco
+import matplotlib.pyplot as plt
 from streamlit.logger import get_logger
 from utils import run_umap
 
@@ -71,7 +73,7 @@ def build_dash_board() -> None:
     with tab2:
       st.header("Customers")
       # Customer Segmentation: A pie chart showing segmentation of customers based on their purchase behavior
-      # TODO: use UMAP for dimensional reduction and HDBSCAN for clustering
+      # TODO: use HDBSCAN for clustering
       st.write("### Customer Segmentation")
       customer_data = conn.query('SELECT Orders.OrderID, Orders.OrderDate, Orders.ShippedDate, Customers.Country AS CustomerCountry, Customers.City AS CustomerCity, Customers.Region AS CustomerRegion, Products.ProductID, Products.ProductName, Products.CategoryID, [Order Details].UnitPrice, [Order Details].Quantity, [Order Details].Discount, Categories.CategoryName, Suppliers.Country AS SupplierCountry, Suppliers.Region AS SupplierRegion, ([Order Details].UnitPrice * [Order Details].Quantity) - ([Order Details].UnitPrice * [Order Details].Quantity * [Order Details].Discount) AS TotalPrice FROM Orders INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID INNER JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID INNER JOIN Products ON [Order Details].ProductID = Products.ProductID INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID WHERE Orders.OrderDate BETWEEN \'2010-01-01\' AND \'2020-12-31\' ORDER BY Orders.OrderDate;')
       st.dataframe(customer_data)
@@ -83,10 +85,23 @@ def build_dash_board() -> None:
       cols_to_retain = ['OrderID', 'TotalPrice', 'UnitPrice', 'Quantity', 'ProductID', 'CategoryID', 'Discount']
      
       embedding = run_umap(df, cols_to_transform, cols_to_retain)
-      
+      # plot umap results
       fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, color='CustomerRegion')
       st.plotly_chart(fig)
+
+      # hdbscan clustering
+      clusterer = hdbscan.HDBSCAN(min_cluster_size=10, gen_min_span_tree=True)
+      clusterer.fit(embedding)
+      print(len(clusterer.labels_))
+      df["clusterLabel"] = clusterer.labels_
       
+      # plot hdbscan results
+      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, color="clusterLabel")
+      st.plotly_chart(fig)
+
+      #fig = plt.figure(figsize=(8,8))
+      #clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis', edge_alpha=0.6,node_size=80,edge_linewidth=2)
+      #st.pyplot(fig)
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")
