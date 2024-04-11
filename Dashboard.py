@@ -86,7 +86,8 @@ def build_dash_board() -> None:
      
       embedding = run_umap(df, cols_to_transform, cols_to_retain)
       # plot umap results
-      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, color='CustomerRegion')
+      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
+                          color='CustomerRegion')
       st.plotly_chart(fig)
 
       # hdbscan clustering
@@ -96,7 +97,8 @@ def build_dash_board() -> None:
       df["clusterLabel"] = clusterer.labels_
       
       # plot hdbscan results
-      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, color="clusterLabel")
+      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
+                          color="clusterLabel")
       st.plotly_chart(fig)
 
       #fig = plt.figure(figsize=(8,8))
