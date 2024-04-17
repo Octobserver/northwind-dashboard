@@ -16,6 +16,7 @@ import inspect
 import textwrap
 import numpy as np
 import umap.umap_ as umap
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 import streamlit as st
@@ -30,13 +31,12 @@ def show_code(demo):
         sourcelines, _ = inspect.getsourcelines(demo)
         st.code(textwrap.dedent("".join(sourcelines[1:])))
 
-def run_umap(df, cols_to_transform, cols_to_retain, n_components=3):
+def dimentional_reduction(df, cols_to_transform, cols_to_retain, n_components=4):
 
     enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(df.shape[0]*0.05), handle_unknown='infrequent_if_exist', dtype = int)
     transformed = enc.fit_transform(df[cols_to_transform])
     processed_data = np.concatenate([df[cols_to_retain], transformed], axis=1)
 
-    reducer = umap.UMAP(n_components = n_components)
-    scaled_processed_data = StandardScaler().fit_transform(processed_data)
-    embedding = reducer.fit_transform(scaled_processed_data)
-    return embedding
+    reducer = reducer = PCA(n_components=n_components)
+    embeddings = reducer.fit_transform(processed_data)
+    return embeddings
