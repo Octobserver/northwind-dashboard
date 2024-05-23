@@ -1,5 +1,5 @@
 altair
-matplotli
+matplotlib
 numpy
 pandas
 plotly

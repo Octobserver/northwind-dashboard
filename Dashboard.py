@@ -14,14 +14,13 @@
 
 import streamlit as st
 import pandas
-import hdbscan
 import plotly.express as px
 import plotly.graph_objs as go
 import country_converter as coco
 import matplotlib.pyplot as plt
 from streamlit.logger import get_logger
 from sklearn.cluster import AgglomerativeClustering
-from utils import dimentional_reduction
+from utils import dimentional_reduction, clustering
 
 LOGGER = get_logger(__name__)
 conn = st.connection('northwind_db', type='sql')
@@ -86,27 +85,20 @@ def build_dash_board() -> None:
       cols_to_transform = ['OrderDate', 'ShippedDate', 'CustomerCountry', 'CustomerCity', 'CustomerRegion', 'ProductName', 'CategoryName', 'SupplierCountry', 'SupplierRegion']
       cols_to_retain = ['TotalPrice', 'UnitPrice', 'Quantity', 'Discount']
      
-      embedding = dimentional_reduction(df, cols_to_transform, cols_to_retain)
+      embeddings = dimentional_reduction(df, cols_to_transform, cols_to_retain)
       # plot results
-      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
-                          color='CustomerRegion')
-      st.plotly_chart(fig)
+      # fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
+      #                    color='CustomerRegion')
+      #st.plotly_chart(fig)
 
-      # hdbscan clustering
-      #clusterer = hdbscan.HDBSCAN(min_cluster_size=10, gen_min_span_tree=True)
-      clusterer = AgglomerativeClustering(n_clusters = 4)
-      clusterer.fit(embedding)
-      print(len(clusterer.labels_))
-      df["clusterLabel"] = clusterer.labels_
+      df["clusterLabel"] = clustering(embeddings=embeddings)
       
-      # plot hdbscan results
-      fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
+      # plot clustering results
+      fig = px.scatter_3d(df, x = embeddings[:, 0], y = embeddings[:, 1], z = embeddings[:, 2], size_max=100, 
                           color="clusterLabel")
+      #fig = px.scatter(df, x = embeddings[:, 0], y = embeddings[:, 1], size_max=10, 
+      #                    color="clusterLabel")
       st.plotly_chart(fig)
-
-      #fig = plt.figure(figsize=(8,8))
-      #clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis', edge_alpha=0.6,node_size=80,edge_linewidth=2)
-      #st.pyplot(fig)
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")

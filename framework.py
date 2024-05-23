@@ -64,7 +64,7 @@ def objective(trial):
     else:
 
         reducer_n = trial.suggest_int("umap_n", 2, 20)
-        umap_n_neighbors = trial.suggest_int("umap_n_neighbors", 2, 500, step = 5)
+        umap_n_neighbors = trial.suggest_int("umap_n_neighbors", 2, 502, step = 5)
         min_dist= trial.suggest_float("min_dist", 0.0, 0.99, step=0.05)
         umap_metric =  trial.suggest_categorical("umap_metric", ["braycurtis", "canberra", "chebyshev", "correlation", "cosine", "dice", "euclidean", "hamming", "haversine", "jaccard", "mahalanobis", "manhattan", "minkowski", "rogerstanimoto", "russellrao", "seuclidean", "sokalmichener", "sokalsneath", "yule"])
         reducer = umap.UMAP(n_components = reducer_n, n_neighbors=umap_n_neighbors, min_dist=min_dist, metric=umap_metric)
@@ -83,7 +83,7 @@ def objective(trial):
 
     elif clusterer_name == 'HDBSCAN':
 
-        hdbscan_n = trial.suggest_int("hdbscan_n", 2, 500, step = 5)
+        hdbscan_n = trial.suggest_int("hdbscan_n", 2, 502, step = 5)
         clusterer_n = data.shape[0] // hdbscan_n
         min_samples = trial.suggest_int("min_samples", 2, 200, step = 2)
         epsilon = trial.suggest_float("epsilon", 0.0, 10.0, step=0.1)
@@ -96,7 +96,7 @@ def objective(trial):
 
     elif clusterer_name == 'OPTICS':
 
-        optics_n = trial.suggest_int("optics_n", 2, 10)
+        optics_n = trial.suggest_int("optics_n", 2, 502, step = 5)
         clusterer_n = data.shape[0] // optics_n
         max_eps = trial.suggest_categorical("max_eps", [1.0, 10.0, 100.0, 1000.0, 10000.0, np.inf])
         optics_metric = trial.suggest_categorical("optics_metric", ["cityblock", "cosine", "euclidean", "l1", "l2", "manhattan", "braycurtis", "canberra", "chebyshev", "correlation", "dice", "hamming", "jaccard", "mahalanobis", "minkowski", "rogerstanimoto", "russellrao", "seuclidean", "sokalmichener", "sokalsneath", "sqeuclidean", "yule"])
@@ -146,11 +146,15 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=500)
+    study.optimize(objective, n_trials=1000)
     print(study.best_trial)
     # Print the best parameters and the best score
     print("Best score:", study.best_value)
     print("Best params:", study.best_params)
+
+    # Save dataframe
+    session = study.trials_dataframe()
+    session.to_csv("./session.csv")
 
 
 

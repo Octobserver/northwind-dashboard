@@ -14,12 +14,11 @@
 
 import inspect
 import textwrap
-import numpy as np
-import umap.umap_ as umap
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-
 import streamlit as st
+import numpy as np
+from framework import clean_data
+from sklearn.decomposition import PCA
+from sklearn.cluster import AgglomerativeClustering, KMeans
 
 
 def show_code(demo):
@@ -31,12 +30,20 @@ def show_code(demo):
         sourcelines, _ = inspect.getsourcelines(demo)
         st.code(textwrap.dedent("".join(sourcelines[1:])))
 
-def dimentional_reduction(df, cols_to_transform, cols_to_retain, n_components=4):
+def dimentional_reduction(df, cols_to_transform, cols_to_retain):
 
-    enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(df.shape[0]*0.05), handle_unknown='infrequent_if_exist', dtype = int)
-    transformed = enc.fit_transform(df[cols_to_transform])
-    processed_data = np.concatenate([df[cols_to_retain], transformed], axis=1)
+    processed_data = clean_data(df, cols_to_transform, cols_to_retain)
 
-    reducer = reducer = PCA(n_components=n_components)
+    reducer = reducer =  reducer = PCA(n_components=19, whiten=False, svd_solver='randomized', tol=7.33267839830423, n_oversamples=3, power_iteration_normalizer='none', random_state=99)
     embeddings = reducer.fit_transform(processed_data)
     return embeddings
+
+
+def clustering(embeddings):
+    clusterer = AgglomerativeClustering(n_clusters = 7, metric='euclidean', linkage='complete')
+    #clusterer = KMeans(n_clusters=3, init="random", n_init=9, tol=1.0, algorithm="elkan", random_state=99)
+    labels = clusterer.fit_predict(embeddings)
+    u, c = np.unique(labels, return_counts=True)
+    print(dict(zip(u, c)))
+    return labels
+
