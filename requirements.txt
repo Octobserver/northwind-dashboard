@@ -6,7 +6,7 @@ plotly
 pydeck
 country-converter
 scikit-learn
-sqlalchemy
+sqlalchemy==1.4.52
 streamlit
 umap-learn
 hdbscan
