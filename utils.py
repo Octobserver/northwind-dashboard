@@ -18,6 +18,8 @@ import streamlit as st
 import numpy as np
 from framework import clean_data
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score
+from k_means_constrained import KMeansConstrained
 from sklearn.cluster import AgglomerativeClustering, KMeans
 
 
@@ -34,16 +36,17 @@ def dimentional_reduction(df, cols_to_transform, cols_to_retain):
 
     processed_data = clean_data(df, cols_to_transform, cols_to_retain)
 
-    reducer = reducer =  reducer = PCA(n_components=19, whiten=False, svd_solver='randomized', tol=7.33267839830423, n_oversamples=3, power_iteration_normalizer='none', random_state=99)
+    reducer = PCA(n_components=5, whiten=False, svd_solver='randomized', tol=9.633806975, n_oversamples=4, power_iteration_normalizer='none', random_state=99)
     embeddings = reducer.fit_transform(processed_data)
     return embeddings
 
 
 def clustering(embeddings):
-    clusterer = AgglomerativeClustering(n_clusters = 7, metric='euclidean', linkage='complete')
-    #clusterer = KMeans(n_clusters=3, init="random", n_init=9, tol=1.0, algorithm="elkan", random_state=99)
+    #clusterer = KMeans(n_clusters=4, init="k-means++", n_init=8, tol=1.0, algorithm="elkan", random_state=99)
+    clusterer = KMeansConstrained(n_clusters=5, init="k-means++", n_init=10, tol=1.0, size_min=100, random_state=99)
     labels = clusterer.fit_predict(embeddings)
+    score = silhouette_score(embeddings, labels)
     u, c = np.unique(labels, return_counts=True)
     print(dict(zip(u, c)))
-    return labels
+    return score, labels
 

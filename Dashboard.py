@@ -86,12 +86,9 @@ def build_dash_board() -> None:
       cols_to_retain = ['TotalPrice', 'UnitPrice', 'Quantity', 'Discount']
      
       embeddings = dimentional_reduction(df, cols_to_transform, cols_to_retain)
-      # plot results
-      # fig = px.scatter_3d(data_frame = df, x = embedding[:, 0], y = embedding[:, 1], z = embedding[:, 2], size_max=10, 
-      #                    color='CustomerRegion')
-      #st.plotly_chart(fig)
+      score, labels = clustering(embeddings=embeddings)
 
-      df["clusterLabel"] = clustering(embeddings=embeddings)
+      df["clusterLabel"] = labels
       
       # plot clustering results
       fig = px.scatter_3d(df, x = embeddings[:, 0], y = embeddings[:, 1], z = embeddings[:, 2], size_max=100, 
@@ -99,6 +96,7 @@ def build_dash_board() -> None:
       #fig = px.scatter(df, x = embeddings[:, 0], y = embeddings[:, 1], size_max=10, 
       #                    color="clusterLabel")
       st.plotly_chart(fig)
+      st.write("Score: " + str(score))
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
       st.write("### Customer Lifetime Value")
