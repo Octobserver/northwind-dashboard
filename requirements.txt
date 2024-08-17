@@ -11,3 +11,4 @@ streamlit
 umap-learn
 hdbscan
 optuna
+seaborn

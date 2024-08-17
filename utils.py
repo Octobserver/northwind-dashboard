@@ -16,12 +16,12 @@ import inspect
 import textwrap
 import streamlit as st
 import numpy as np
-from framework import clean_data
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from k_means_constrained import KMeansConstrained
 from sklearn.cluster import AgglomerativeClustering, KMeans
-
+from sklearn.preprocessing import OneHotEncoder
+from joblib import dump
 
 def show_code(demo):
     """Showing the code of the demo."""
@@ -31,6 +31,18 @@ def show_code(demo):
         st.markdown("## Code")
         sourcelines, _ = inspect.getsourcelines(demo)
         st.code(textwrap.dedent("".join(sourcelines[1:])))
+
+def clean_data(data, cols_to_transform, cols_to_retain):
+    # data preprocessing
+    # use one-hot encoder on cols_to_transform
+    # TODO: experiment with StandardScaler and Normalizer
+    enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(data.shape[0]*0.005), handle_unknown='infrequent_if_exist', dtype = int)
+    transformed = enc.fit_transform(data[cols_to_transform])
+    processed_data = np.concatenate([data[cols_to_retain], transformed], axis=1)
+    # scaled_processed_data = StandardScaler().fit_transform(processed_data)
+    dump(processed_data, "serialized_data.joblib", compress=9)
+    
+    return processed_data
 
 def dimentional_reduction(df, cols_to_transform, cols_to_retain):
 

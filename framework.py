@@ -1,32 +1,23 @@
+#!/usr/bin/env python3
 # A Python framework that employs Optuna for optimizing the hyperparameters of a combined pipeline: 
 #   1. data preprocessing (scaling/normalization)
 #   2. dimensionality reduction 
 #   3. clustering
+# The purpose of this framework is to find informative subgroups of customers based on the Northwind database, a tutorial schema for managing small business customers
 import optuna
 import traceback
 import numpy as np
 import pandas
 import umap.umap_ as umap
-from sklearn.preprocessing import OneHotEncoder,StandardScaler
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans, HDBSCAN, OPTICS, AgglomerativeClustering, SpectralClustering
+from utils import clean_data
 
 raw_data = pandas.read_csv("./sales_data.csv")
 COLS_TO_TRANSFORM = ['OrderDate', 'ShippedDate', 'CustomerCountry', 'CustomerCity', 'CustomerRegion', 'ProductName', 'CategoryName', 'SupplierCountry', 'SupplierRegion']
 COLS_TO_RETAIN = ['TotalPrice', 'UnitPrice', 'Quantity', 'Discount']
-
-def clean_data(data, cols_to_transform, cols_to_retain):
-    # data preprocessing
-    # use one-hot encoder on cols_to_transform
-    # TODO: experiment with StandardScaler and Normalizer
-    enc = OneHotEncoder(drop='first', sparse_output=False, min_frequency=int(data.shape[0]*0.005), handle_unknown='infrequent_if_exist', dtype = int)
-    transformed = enc.fit_transform(data[cols_to_transform])
-    processed_data = np.concatenate([data[cols_to_retain], transformed], axis=1)
-    # scaled_processed_data = StandardScaler().fit_transform(processed_data)
-    
-    return processed_data
 
 def objective(trial):
     # 3 dimensionality reduction algorithms (PCA, t-SNE, UMAP) x 5 clustering techniques (KMeans, HDBSCAN, OPTICS, Agglomerative Clustering, Spectral Clustering) experimental design
