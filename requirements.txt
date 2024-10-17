@@ -1,4 +1,5 @@
 altair
+k_means_constrained
 matplotlib
 numpy
 pandas
