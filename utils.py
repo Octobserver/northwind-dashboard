@@ -71,13 +71,16 @@ def reduce_and_cluster(data, pca_params, kmeans_params, umap_params, use_constra
     labels = clusterer.fit_predict(embeddings)
     score = silhouette_score(embeddings, labels)
     
-    cluster_counts = dict(zip(*np.unique(labels, return_counts=True)))
-    
     umap_2d = umap.UMAP(**umap_params)
     umap_embeddings = umap_2d.fit_transform(data)
     
     df_plot = pd.DataFrame(umap_embeddings, columns=['UMAP1', 'UMAP2'])
-    df_plot['Cluster'] = labels
+
+    label_names = ["Dairy Dominators", "Generous Spenders", "Frequent Thrifters", "Selective Shoppers", "Bulk Bargain Shoppers", "Steady Spenders", "The Internationals"]
+    labels_ = [label_names[l] for l in labels]
+    cluster_counts = dict(zip(*np.unique(labels_, return_counts=True)))
+    
+    df_plot['Cluster'] = labels_
     
     return score, df_plot, cluster_counts
 

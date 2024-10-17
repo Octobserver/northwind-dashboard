@@ -114,10 +114,12 @@ def build_dash_board() -> None:
       fig = px.scatter(df_plot, x = 'UMAP1', y = 'UMAP2', size_max=10, 
                           color='Cluster')
       st.plotly_chart(fig)
-      st.write("Score: " + str(score))
+
+      for k in cluster_counts:
+         st.write(f"{k}: {cluster_counts[k]} customers")
 
       # Customer Lifetime Value (CLV): A bar chart showing the CLV of different customer segments
-      st.write("### Customer Lifetime Value")
+      #st.write("### Customer Lifetime Value")
 
       #Top Customers: A list or bar chart of top customers by sales
       st.write("### Top Customers")
