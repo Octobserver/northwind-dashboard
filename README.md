@@ -21,8 +21,8 @@ In today's competitive market, understanding customer behavior and preferences i
 4. **Interactive UI**: Our Streamlit-based app serves as an interface where users can query the SQLite database and visualize the results in an intuitive and accessible manner.
 
 5. **Deliverables**:
-   - [Notebook for Clustering & Optimization](#): Detailed analysis and model development documented in this Jupyter Notebook.
-   - [PowerPoint Presentation](#): Summary of the clustering insights and their potential business implications.
+   - [Notebook for Clustering & Optimization](https://github.com/Octobserver/northwind-dashboard/blob/main/project_northwind.ipynb): Detailed analysis and model development documented in this Jupyter Notebook.
+   - [PowerPoint Presentation](https://docs.google.com/presentation/d/1_wr52dap_LSNTwQfSlkGssDwxSjHro23frnLtfM-890/edit?usp=sharing): Summary of the clustering insights and their potential business implications.
 
 ## Setup Instructions
 
@@ -52,17 +52,3 @@ To get started with **Project Northwind**, follow these steps:
     streamlit run Dashboard.py
 4. **Explore the data**:
     Use the app interface to run SQL queries and view customer segmentation results.
-
-## Usage
-
-Once the Streamlit app is running, users can:
-
-- **Query the Northwind database** for specific customer or order information through the app's intuitive interface.
-- **Visualize customer clusters** based on the clustering model, allowing users to understand customer groupings and patterns.
-- **Analyze customer profiles** to gain actionable business insights that can inform product development, marketing strategies, and personalized customer experiences.
-
-## Links
-
-- [Clustering & Optimization Notebook](https://github.com/yourusername/project-northwind/notebook-link)
-- [PowerPoint Presentation on Results](https://github.com/yourusername/project-northwind/presentation-link)
-

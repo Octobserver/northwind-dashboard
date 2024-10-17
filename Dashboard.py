@@ -20,8 +20,7 @@ import plotly.graph_objs as go
 import country_converter as coco
 import matplotlib.pyplot as plt
 from streamlit.logger import get_logger
-from sklearn.cluster import AgglomerativeClustering
-from utils import dimentional_reduction, clustering
+from utils import clean_data, reduce_and_cluster
 
 LOGGER = get_logger(__name__)
 conn = st.connection('northwind_db', type='sql')
@@ -32,14 +31,11 @@ def build_dash_board() -> None:
     with tab1:
       st.header("Sales")
       st.write("### Monthly Sales Trend")
-      #returns a dataframe
       monthly_sales = conn.query('SELECT strftime(\'%m\',OrderDate) AS Month, SUM(Quantity * UnitPrice) AS MonthlySales FROM Orders INNER JOIN [Order Details] ON Orders.OrderID == [Order Details].OrderID GROUP BY Month;')
-      #st.dataframe(monthly_sales)
       st.line_chart(monthly_sales, x = "Month", y = "MonthlySales")
 
       st.write("### Sales by Category")
       category_sales = conn.query('SELECT Categories.CategoryName AS Category, SUM(Quantity * [Order Details].UnitPrice) AS SalesByCategory FROM Orders INNER JOIN [Order Details] ON Orders.OrderID == [Order Details].OrderID INNER JOIN Products ON [Order Details].ProductID == Products.ProductID INNER JOIN Categories ON Products.CategoryID == Categories.CategoryID GROUP BY Categories.CategoryName;')
-      #st.dataframe(category_sales)
       st.bar_chart(category_sales, x = "Category", y = "SalesByCategory")
 
       st.write("### Sales by Region")
@@ -63,12 +59,10 @@ def build_dash_board() -> None:
 
       st.write("### Top 10 Sales")
       top_10_sales = conn.query('WITH SalesRanked AS (SELECT Products.ProductName AS ProductName, SUM(Quantity * [Order Details].UnitPrice) AS Sales FROM Orders INNER JOIN [Order Details] ON Orders.OrderID == [Order Details].OrderID INNER JOIN Products ON [Order Details].ProductID == Products.ProductID GROUP BY [Order Details].ProductID ORDER BY Sales DESC) SELECT * FROM SalesRanked LIMIT 10;')
-      #st.dataframe(top_10_sales)
       st.bar_chart(top_10_sales, x = "ProductName", y = "Sales")
 
       st.write("### Sales by Employee")
       employee_sales = conn.query('SELECT Employees.FirstName || " " || Employees.LastName AS EmployeeName, SUM(Quantity * [Order Details].UnitPrice) AS SalesByEmployee FROM Employees INNER JOIN Orders ON Employees.EmployeeID == Orders.EmployeeID INNER JOIN [Order Details] ON Orders.OrderID == [Order Details].OrderID GROUP BY EmployeeName;')
-      #st.dataframe(employee_sales)
       st.bar_chart(employee_sales, x = "EmployeeName", y = "SalesByEmployee")
 
     with tab2:
@@ -76,26 +70,49 @@ def build_dash_board() -> None:
       # Customer Segmentation: A pie chart showing segmentation of customers based on their purchase behavior
       st.write("### Customer Segmentation")
       customer_data = conn.query('SELECT Orders.OrderID, Orders.OrderDate, Orders.ShippedDate, Customers.Country AS CustomerCountry, Customers.City AS CustomerCity, Customers.Region AS CustomerRegion, Products.ProductID, Products.ProductName, Products.CategoryID, [Order Details].UnitPrice, [Order Details].Quantity, [Order Details].Discount, Categories.CategoryName, Suppliers.Country AS SupplierCountry, Suppliers.Region AS SupplierRegion, ([Order Details].UnitPrice * [Order Details].Quantity) - ([Order Details].UnitPrice * [Order Details].Quantity * [Order Details].Discount) AS TotalPrice FROM Orders INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID INNER JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID INNER JOIN Products ON [Order Details].ProductID = Products.ProductID INNER JOIN Categories ON Products.CategoryID = Categories.CategoryID INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID WHERE Orders.OrderDate BETWEEN \'2010-01-01\' AND \'2020-12-31\' ORDER BY Orders.OrderDate;')
+      st.write("Customer Data")
       st.dataframe(customer_data)
+      st.write("Customer Profiles")
+      pca_params = {
+        'n_components': 5,
+        'whiten': False,
+        'svd_solver': 'randomized',
+        'tol': 8,
+        'n_oversamples': 4,
+        'power_iteration_normalizer': 'none',
+        'random_state': 8
+      }
+
+      kmeans_params = {
+          'n_clusters': 7,
+          'init': "k-means++",
+          'n_init': 10,
+          'tol': 1.0,
+          'size_min': 120,
+          'random_state': 8
+      }
+
+      umap_params = {
+          'n_neighbors': 75,
+          'min_dist': 0.50, 
+          'n_components': 2,
+          'random_state': 8
+      }
 
       # transform categorical data
       df = pandas.DataFrame(customer_data).dropna()
       # drop ID columns
       df.drop(['OrderID', 'ProductID', 'CategoryID'], axis=1, inplace=True)
-      # columns: OrderDate, ShippedDate, CustomerCountry, CustomerCity, CustomerRegion, ProductName, UnitPrice, Quantity, Discount, CategoryName, SupplierCountry,SupplierRegion,TotalPrice
+      # columns to be transformed by one-hot encoder
       cols_to_transform = ['OrderDate', 'ShippedDate', 'CustomerCountry', 'CustomerCity', 'CustomerRegion', 'ProductName', 'CategoryName', 'SupplierCountry', 'SupplierRegion']
       cols_to_retain = ['TotalPrice', 'UnitPrice', 'Quantity', 'Discount']
-     
-      embeddings = dimentional_reduction(df, cols_to_transform, cols_to_retain)
-      score, labels = clustering(embeddings=embeddings)
 
-      df["clusterLabel"] = labels
+      processed_data = clean_data(df, cols_to_transform, cols_to_retain)
+      score, df_plot, cluster_counts = reduce_and_cluster(processed_data, pca_params, kmeans_params, umap_params, use_constrained=True)
       
       # plot clustering results
-      fig = px.scatter_3d(df, x = embeddings[:, 0], y = embeddings[:, 1], z = embeddings[:, 2], size_max=100, 
-                          color="clusterLabel")
-      #fig = px.scatter(df, x = embeddings[:, 0], y = embeddings[:, 1], size_max=10, 
-      #                    color="clusterLabel")
+      fig = px.scatter(df_plot, x = 'UMAP1', y = 'UMAP2', size_max=10, 
+                          color='Cluster')
       st.plotly_chart(fig)
       st.write("Score: " + str(score))
 
@@ -128,16 +145,13 @@ def build_dash_board() -> None:
       st.plotly_chart(map)
 
       #Orders by Customer: A bar chart showing the number of orders by customer
-      st.write("Orders by Customer")
+      st.write("### Orders by Customer")
       orders_by_customer = conn.query('SELECT Customers.CustomerID AS CustomerName, COUNT(*) AS TotalOrder FROM Customers INNER JOIN Orders ON Customers.CustomerID = Orders.CustomerID GROUP BY Customers.CustomerID ORDER BY TotalOrder DESC')
       st.bar_chart(orders_by_customer, x="CustomerName", y="TotalOrder")
 
 
     with tab3:
       st.header("Suppliers")
-
-      #Supplier Performance: Metrics on delivery time, completeness, and correctness from different suppliers
-      st.write("### Supplier Performance")
 
       #Supplier Geographic Distribution: A map showing where suppliers are located
       st.write("### Supplier Geographic Distribution")
@@ -159,17 +173,17 @@ def build_dash_board() -> None:
       st.plotly_chart(map)
 
       #Products by Supplier: A bar chart showing the number of products supplied by each supplier
-      st.write("Products by Supplier")
+      st.write("### Products by Supplier")
       products_by_supplier = conn.query("SELECT CompanyName, COUNT(*) AS NumProducts FROM Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
       st.bar_chart(products_by_supplier, x="CompanyName", y="NumProducts")
 
       #Inventory Levels by Supplier: A bar chart showing current inventory levels of different products by supplier
-      st.write("Inventory Levels by Supplier")
+      st.write("### Inventory Levels by Supplier")
       inventory_levels = conn.query("SELECT CompanyName, SUM(UnitsInStock) AS Inventory FROM Products INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
       st.bar_chart(inventory_levels, x="CompanyName", y="Inventory")
 
       #Orders by Supplier: A bar chart showing the number of orders by supplier
-      st.write("Orders by Supplier")
+      st.write("### Orders by Supplier")
       orders_by_suppliers = conn.query("SELECT CompanyName, COUNT(DISTINCT(OrderID)) AS NumOrders FROM [Order Details] INNER JOIN Products ON [Order Details].ProductID = Products.ProductID INNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID GROUP BY Suppliers.SupplierID")
       st.bar_chart(orders_by_suppliers, x="CompanyName", y="NumOrders")
 

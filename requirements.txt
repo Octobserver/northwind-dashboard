@@ -1,7 +1,7 @@
 altair
-k_means_constrained
+k_means_constrained==0.7.2
 matplotlib
-numpy
+numpy==2.0.2
 pandas
 plotly
 pydeck
